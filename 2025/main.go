@@ -64,6 +64,27 @@ func (s *Screen) PaintFg(x, y int, v string) {
 	s.fg[y][x] = v
 }
 
+func (s *Screen) PainAsciiArt(art string) {
+	y := 0
+	lastX := 0
+	for x := 0; x < len(eidMubarak2025); x++ {
+		v := string(eidMubarak2025[x])
+		switch v {
+		case "\n":
+			y++
+			lastX = x + 1 // +1 because the next x value should be 0 to indicate the starting index.
+			break
+
+		case " ":
+			break
+
+		default:
+			s.PaintFg(x-lastX, y, v)
+			break
+		}
+	}
+}
+
 func (s Screen) ClearFg(x, y int) {
 	s.PaintFg(x, y, " ")
 }
@@ -113,8 +134,8 @@ func (s *Screen) Stop() {
 func main() {
 	sc := NewScreen(180, 40)
 	sc.Start()
-	time.Sleep(time.Second * 2)
-	go eidMubarakRenderer(sc)
+	go sc.PainAsciiArt(eidMubarak2025)
+	// go eidMubarakRenderer(sc)
 	time.Sleep(time.Second * 28)
 	sc.Stop()
 }
