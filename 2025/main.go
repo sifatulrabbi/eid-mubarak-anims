@@ -17,7 +17,7 @@ type Screen struct {
 	loop bool
 }
 
-var EmptySpaces = []string{".", " ", ",", " ", "'", " ", "`"}
+var EmptySpaces = []string{" ", " ", " ", ".", ",", " ", " ", "'", " ", "`", " ", " "}
 
 func getEmptySpace() string {
 	i := rand.Intn(len(EmptySpaces))
@@ -100,8 +100,7 @@ func (s *Screen) Start() {
 	s.Render()
 	go func() {
 		for s.loop {
-			time.Sleep(time.Millisecond * 200)
-			s.ClearOutputScreen()
+			time.Sleep(time.Millisecond * 150)
 			s.Render()
 		}
 	}()
@@ -112,9 +111,10 @@ func (s *Screen) Stop() {
 }
 
 func main() {
-	sc := NewScreen(150, 40)
-	eidMubarakRenderer(sc)
+	sc := NewScreen(180, 40)
 	sc.Start()
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * 2)
+	go eidMubarakRenderer(sc)
+	time.Sleep(time.Second * 28)
 	sc.Stop()
 }
