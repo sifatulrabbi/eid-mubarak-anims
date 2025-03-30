@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -24,6 +25,14 @@ func getEmptySpace() string {
 	return EmptySpaces[i]
 }
 
+func getEmptyRow(size int) []string {
+	s := make([]string, size)
+	for i := 0; i < len(s); i++ {
+		s[i] = " "
+	}
+	return s
+}
+
 func NewScreen(x, y int) *Screen {
 	s := Screen{
 		loop: false,
@@ -32,16 +41,9 @@ func NewScreen(x, y int) *Screen {
 		bg:   make([][]string, y),
 	}
 	// y = rows, x = columns
-	emptyRow := func() []string {
-		s := make([]string, x)
-		for i := 0; i < len(s); i++ {
-			s[i] = " "
-		}
-		return s
-	}
 	for i := 0; i < len(s.bg); i++ {
-		s.bg[i] = emptyRow()
-		s.fg[i] = emptyRow()
+		s.bg[i] = getEmptyRow(x)
+		s.fg[i] = getEmptyRow(x)
 	}
 	return &s
 }
@@ -67,8 +69,8 @@ func (s *Screen) PaintFg(x, y int, v string) {
 func (s *Screen) PainAsciiArt(art string) {
 	y := 0
 	lastX := 0
-	for x := 0; x < len(eidMubarak2025); x++ {
-		v := string(eidMubarak2025[x])
+	for x := 0; x < len(art); x++ {
+		v := string(art[x])
 		switch v {
 		case "\n":
 			y++
@@ -82,6 +84,22 @@ func (s *Screen) PainAsciiArt(art string) {
 			s.PaintFg(x-lastX, y, v)
 			break
 		}
+	}
+}
+
+func (s *Screen) PaintDimToBrightAsciiArt(art string) {
+	str := strings.ReplaceAll(art, "@", ".")
+	conversions := [][]string{
+		{".", ","},
+		{",", ";"},
+		{";", "*"},
+		{"*", "&"},
+		{"&", "@"},
+	}
+	for _, v := range conversions {
+		time.Sleep(time.Millisecond * 300)
+		str = strings.ReplaceAll(str, v[0], v[1])
+		s.PainAsciiArt(str)
 	}
 }
 
@@ -132,10 +150,15 @@ func (s *Screen) Stop() {
 }
 
 func main() {
+	b, err := os.ReadFile("./2025/eidMubarak.txt")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	eidMubarakTxt := string(b)
+
 	sc := NewScreen(180, 40)
 	sc.Start()
-	go sc.PainAsciiArt(eidMubarak2025)
-	// go eidMubarakRenderer(sc)
-	time.Sleep(time.Second * 28)
+	go sc.PaintDimToBrightAsciiArt(eidMubarakTxt)
+	time.Sleep(time.Second * 30)
 	sc.Stop()
 }
