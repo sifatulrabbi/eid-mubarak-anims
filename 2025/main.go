@@ -33,17 +33,20 @@ func getEmptyRow(size int) []string {
 	return s
 }
 
+func getEmptyBoard(x, y int) [][]string {
+	b := make([][]string, y)
+	for i := 0; i < y; i++ {
+		b[i] = getEmptyRow(x)
+	}
+	return b
+}
+
 func NewScreen(x, y int) *Screen {
 	s := Screen{
 		loop: false,
 		size: [2]int{x, y},
-		fg:   make([][]string, y),
-		bg:   make([][]string, y),
-	}
-	// y = rows, x = columns
-	for i := 0; i < len(s.bg); i++ {
-		s.bg[i] = getEmptyRow(x)
-		s.fg[i] = getEmptyRow(x)
+		fg:   getEmptyBoard(x, y),
+		bg:   getEmptyBoard(x, y),
 	}
 	return &s
 }
@@ -57,34 +60,63 @@ func (s Screen) SizeX() int {
 }
 
 func (s *Screen) PaintFg(x, y int, v string) {
+	s.PaintOnBoard(s.fg, x, y, v)
+}
+
+func (s Screen) PaintOnBoard(board [][]string, x, y int, v string) {
 	if y >= s.SizeY() {
 		log.Fatalf("Y is out of screen. Max y size: %d, got: %d\n", s.SizeY(), y)
 	}
 	if x >= s.SizeX() {
 		log.Fatalf("X is out of screen. Max x size: %d, got: %d\n", s.SizeX(), x)
 	}
-	s.fg[y][x] = v
+	board[y][x] = v
 }
 
 func (s *Screen) PainAsciiArt(art string) {
-	y := 0
-	lastX := 0
+	var (
+		board   = getEmptyBoard(s.SizeX(), s.SizeY())
+		y       = 0
+		lastX   = 0
+		maxX    = 0
+		yOffset = 0
+		xOffset = 0
+	)
 	for x := 0; x < len(art); x++ {
 		v := string(art[x])
 		switch v {
 		case "\n":
-			y++
+			if maxX < x-lastX {
+				maxX = x - lastX
+			}
 			lastX = x + 1 // +1 because the next x value should be 0 to indicate the starting index.
+			y++
 			break
-
 		case " ":
 			break
-
 		default:
-			s.PaintFg(x-lastX, y, v)
+			s.PaintOnBoard(board, x-lastX, y, v)
 			break
 		}
 	}
+
+	if s.SizeX() > maxX {
+		xOffset = (s.SizeX() - maxX) / 2
+	}
+	if s.SizeY() > y {
+		yOffset = (s.SizeY() - y) / 2
+	}
+
+	newBoard := getEmptyBoard(s.SizeX(), s.SizeY())
+	for i := 0; i < (s.SizeY() - yOffset); i++ {
+		newRow := getEmptyRow(s.SizeX())
+		for j := 0; j < s.SizeX()-xOffset; j++ {
+			newRow[j+xOffset-1] = board[i][j]
+		}
+		newBoard[i+yOffset] = newRow
+	}
+
+	s.fg = newBoard
 }
 
 func (s *Screen) PaintDimToBrightAsciiArt(art string) {
